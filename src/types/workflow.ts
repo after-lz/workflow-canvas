@@ -20,6 +20,9 @@ export interface ImageNodeData {
   title: string
   fileName?: string
   previewUrl?: string
+  remoteUrl?: string
+  status?: 'idle' | 'running' | 'success' | 'failed'
+  errorMessage?: string
 }
 
 /** 视频节点数据 */
@@ -82,7 +85,7 @@ export function createDefaultTextData(index: number): TextNodeData {
   return {
     label: `文本节点 ${index}`,
     content: '',
-    model: 'W Image 2.5',
+    model: 'gpt-image-2',
     optimizeModel: 'GPT4.0',
     quality: '高质量',
     resolution: '4K',

@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { Handle, Position } from '@vue-flow/core'
 import type { ImageNodeData } from '../../types/workflow'
 import { useProjectStore } from '../../stores/project'
+import { useAuthStore } from '../../stores/auth'
+import { uploadSourceImage } from '../../services/generation'
 
 const props = defineProps<{
   id: string
@@ -10,22 +12,37 @@ const props = defineProps<{
 }>()
 
 const store = useProjectStore()
+const auth = useAuthStore()
 const inputRef = ref<HTMLInputElement | null>(null)
 const dragging = ref(false)
+const displayUrl = computed(() => props.data.previewUrl || props.data.remoteUrl || '')
 
 function openPicker() {
   inputRef.value?.click()
 }
 
-function onFile(file?: File | null) {
+async function onFile(file?: File | null) {
   if (!file || !file.type.startsWith('image/')) return
   const previewUrl = URL.createObjectURL(file)
   props.data.fileName = file.name
   props.data.previewUrl = previewUrl
+  props.data.remoteUrl = ''
+  props.data.status = 'idle'
   store.updateNodeData(props.id, {
     fileName: file.name,
     previewUrl,
+    remoteUrl: '',
+    status: 'idle',
   })
+
+  if (!auth.isLoggedIn) return
+  try {
+    const remoteUrl = await uploadSourceImage(file)
+    props.data.remoteUrl = remoteUrl
+    store.updateNodeData(props.id, { remoteUrl })
+  } catch {
+    props.data.errorMessage = '参考图暂未上传，开始任务时会再试一次'
+  }
 }
 
 function onInputChange(e: Event) {
@@ -59,14 +76,14 @@ function onDrop(e: DragEvent) {
 
     <div
       class="dropzone"
-      :class="{ active: dragging, filled: !!data.previewUrl }"
+      :class="{ active: dragging, filled: !!displayUrl, running: data.status === 'running' }"
       @click="openPicker"
       @dragover.prevent="dragging = true"
       @dragleave.prevent="dragging = false"
       @drop="onDrop"
       @mousedown.stop
     >
-      <img v-if="data.previewUrl" :src="data.previewUrl" :alt="data.fileName" class="preview" />
+      <img v-if="displayUrl" :src="displayUrl" :alt="data.fileName || data.title" class="preview" />
       <template v-else>
         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5">
           <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -75,6 +92,8 @@ function onDrop(e: DragEvent) {
         </svg>
         <p>点击上传或拖动图片</p>
       </template>
+      <div v-if="data.status === 'running'" class="overlay">生成中</div>
+      <p v-else-if="data.status === 'failed'" class="fail">{{ data.errorMessage || '生成失败' }}</p>
     </div>
 
     <input ref="inputRef" type="file" accept="image/*" hidden @change="onInputChange" />
@@ -117,6 +136,7 @@ function onDrop(e: DragEvent) {
 }
 
 .dropzone {
+  position: relative;
   min-height: 180px;
   margin: 10px;
   border-radius: 10px;
@@ -141,6 +161,33 @@ function onDrop(e: DragEvent) {
 .dropzone.filled {
   border-style: solid;
   padding: 0;
+}
+
+.dropzone.running {
+  position: relative;
+}
+
+.overlay,
+.fail {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  margin: 0;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.overlay {
+  background: rgba(17, 24, 39, 0.78);
+  color: #bfdbfe;
+}
+
+.fail {
+  background: rgba(127, 29, 29, 0.88);
+  color: #fecaca;
 }
 
 .preview {

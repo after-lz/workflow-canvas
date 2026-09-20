@@ -1,3 +1,37 @@
+<template>
+  <div class="login-page">
+    <div class="sky" aria-hidden="true">
+      <div class="earth" />
+      <p class="watermark">Mengtian AI Working Spaces</p>
+    </div>
+
+    <section class="card">
+      <button class="close" type="button" aria-label="关闭" @click="close">×</button>
+      <h1>mengtian AI</h1>
+      <p class="sub">登录后可开启内容生成与历史记录</p>
+
+      <form @submit.prevent="onSubmit">
+        <label>
+          <span>用户名</span>
+          <input v-model="account" type="text" autocomplete="username" placeholder="请输入 OMS 用户名" />
+        </label>
+        <label>
+          <span>密码</span>
+          <input v-model="password" type="password" autocomplete="current-password" placeholder="请输入密码" />
+        </label>
+
+        <p v-if="error" class="error">{{ error }}</p>
+
+        <button class="submit" type="submit" :disabled="submitting">
+          {{ submitting ? '登录中' : '登 录' }}
+        </button>
+        <button class="register" type="button" @click="onRegister">注 册</button>
+        <p v-if="registerTip" class="tip">{{ registerTip }}</p>
+      </form>
+    </section>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -44,40 +78,6 @@ async function onSubmit() {
   }
 }
 </script>
-
-<template>
-  <div class="login-page">
-    <div class="sky" aria-hidden="true">
-      <div class="earth" />
-      <p class="watermark">Mengtian AI Working Spaces</p>
-    </div>
-
-    <section class="card">
-      <button class="close" type="button" aria-label="关闭" @click="close">×</button>
-      <h1>mengtian AI</h1>
-      <p class="sub">使用 OMS 账号登录，开启内容生成与历史记录</p>
-
-      <form @submit.prevent="onSubmit">
-        <label>
-          <span>用户名</span>
-          <input v-model="account" type="text" autocomplete="username" placeholder="请输入 OMS 用户名" />
-        </label>
-        <label>
-          <span>密码</span>
-          <input v-model="password" type="password" autocomplete="current-password" placeholder="请输入密码" />
-        </label>
-
-        <p v-if="error" class="error">{{ error }}</p>
-
-        <button class="submit" type="submit" :disabled="submitting">
-          {{ submitting ? '登录中' : '登 录' }}
-        </button>
-        <button class="register" type="button" @click="onRegister">注 册</button>
-        <p v-if="registerTip" class="tip">{{ registerTip }}</p>
-      </form>
-    </section>
-  </div>
-</template>
 
 <style scoped>
 .login-page {

@@ -1,31 +1,3 @@
-<script setup lang="ts">
-import { useRouter } from 'vue-router'
-import UserEntry from '../components/auth/UserEntry.vue'
-import { useProjectStore } from '../stores/project'
-
-const store = useProjectStore()
-const router = useRouter()
-
-function open(id: string) {
-  store.openProject(id)
-  router.push(`/canvas/${id}`)
-}
-
-function create() {
-  const p = store.createProject()
-  open(p.id)
-}
-
-function formatTime(ts: number) {
-  return new Date(ts).toLocaleString('zh-CN', {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-</script>
-
 <template>
   <div class="page">
     <header class="hero">
@@ -72,6 +44,34 @@ function formatTime(ts: number) {
     </section>
   </div>
 </template>
+
+<script setup lang="ts">
+import { useRouter } from 'vue-router'
+import UserEntry from '../components/auth/UserEntry.vue'
+import { useProjectStore } from '../stores/project'
+
+const store = useProjectStore()
+const router = useRouter()
+
+function open(id: string) {
+  store.openProject(id)
+  router.push(`/canvas/${id}`)
+}
+
+function create() {
+  const p = store.createProject()
+  open(p.id)
+}
+
+function formatTime(ts: number) {
+  return new Date(ts).toLocaleString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+</script>
 
 <style scoped>
 .page {

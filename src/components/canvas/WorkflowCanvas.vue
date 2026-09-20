@@ -31,6 +31,7 @@ const props = defineProps<{
 }>()
 
 const store = useProjectStore()
+let applyingRemote = false
 
 const nodeTypes = {
   text: markRaw(TextNode),
@@ -94,15 +95,29 @@ watch(
   { immediate: true },
 )
 
+watch(
+  () => store.canvasEpoch,
+  () => {
+    applyingRemote = true
+    syncFromStore()
+    nextTick(() => {
+      applyingRemote = false
+    })
+  },
+)
+
 function persist() {
+  if (applyingRemote) return
   store.updateCanvas(clonePlain(nodes.value), clonePlain(edges.value))
 }
 
 onNodesChange(() => {
+  if (applyingRemote) return
   nextTick(persist)
 })
 
 onEdgesChange(() => {
+  if (applyingRemote) return
   nextTick(persist)
 })
 

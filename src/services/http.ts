@@ -17,7 +17,11 @@ export class ApiError extends Error {
   }
 }
 
-export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+export async function request<T>(
+  path: string,
+  init: RequestInit = {},
+  baseUrl = API_BASE_URL,
+): Promise<T> {
   const headers = new Headers(init.headers)
   if (!headers.has('Accept')) headers.set('Accept', 'application/json')
 
@@ -28,7 +32,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
 
   let response: Response
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers })
+    response = await fetch(`${baseUrl}${path}`, { ...init, headers })
   } catch {
     throw new ApiError('网络异常，请稍后重试', -1)
   }

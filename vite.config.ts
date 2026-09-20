@@ -4,18 +4,25 @@ import { defineConfig, loadEnv } from 'vite'
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const apiOrigin = env.VITE_API_BASE_URL || 'http://woodai.vip'
-
-  const proxy = {
-    '/api': {
-      target: apiOrigin,
-      changeOrigin: true,
-    },
-  }
+  const apiOrigin = env.VITE_API_BASE_URL
 
   return {
     plugins: [vue()],
-    server: { proxy },
-    preview: { proxy },
+    server: {
+      proxy: {
+        '/api': {
+          target: apiOrigin,
+          changeOrigin: true,
+        },
+      },
+    },
+    preview: {
+      proxy: {
+        '/api': {
+          target: apiOrigin,
+          changeOrigin: true,
+        },
+      },
+    },
   }
 })

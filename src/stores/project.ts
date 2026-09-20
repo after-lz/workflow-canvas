@@ -7,7 +7,8 @@ import {
   createDefaultTextData,
   createDefaultVideoData,
 } from '../types/workflow'
-import { workflowEngine } from '../services/workflowEngine'
+import { ApiError } from '../services/http'
+import { runImageTasks } from '../services/runTasks'
 
 const STORAGE_KEY = 'workflow-canvas-projects'
 
@@ -30,6 +31,8 @@ export const useProjectStore = defineStore('project', () => {
   const projects = ref<Project[]>(loadProjects())
   const currentProjectId = ref<string | null>(null)
   const lastRunMessage = ref('')
+  const running = ref(false)
+  const canvasEpoch = ref(0)
 
   const currentProject = computed(() => {
     return projects.value.find((p) => p.id === currentProjectId.value) ?? null
@@ -137,19 +140,62 @@ export const useProjectStore = defineStore('project', () => {
     return true
   }
 
-  async function runWorkflow() {
+  async function runWorkflow(onlyNodeId?: string) {
     const p = currentProject.value
     if (!p) {
       lastRunMessage.value = '请先打开一个项目'
       return
     }
-    const result = await workflowEngine.run({
-      projectId: p.id,
-      nodes: p.nodes,
-      edges: p.edges,
-    })
-    lastRunMessage.value = result.message
-    return result
+    if (running.value) {
+      lastRunMessage.value = '任务进行中，请稍候'
+      return
+    }
+
+    running.value = true
+    lastRunMessage.value = '正在提交生成任务...'
+    try {
+      lastRunMessage.value = await runImageTasks({
+        getNodes: () => currentProject.value?.nodes ?? [],
+        getEdges: () => currentProject.value?.edges ?? [],
+        onProgress: (message) => {
+          lastRunMessage.value = message
+        },
+        patchNode: (nodeId, patch) => {
+          updateNodeData(nodeId, patch)
+          canvasEpoch.value += 1
+        },
+        createResultNode: (sourceId, imageUrl) => {
+          const source = currentProject.value?.nodes.find((node) => node.id === sourceId)
+          const created = addNode('image', {
+            x: (source?.position.x ?? 200) + 420,
+            y: source?.position.y ?? 160,
+          })
+          if (!created || !currentProject.value) return
+          updateNodeData(created.id, {
+            previewUrl: imageUrl,
+            remoteUrl: imageUrl,
+            title: '生成结果',
+            status: 'success',
+          })
+          currentProject.value.edges = [
+            ...currentProject.value.edges,
+            {
+              id: `e-${sourceId}-${created.id}`,
+              source: sourceId,
+              target: created.id,
+              type: 'smoothstep',
+              animated: true,
+            },
+          ]
+          persist()
+          canvasEpoch.value += 1
+        },
+      }, onlyNodeId)
+    } catch (error) {
+      lastRunMessage.value = error instanceof ApiError ? error.message : '任务失败，请稍后重试'
+    } finally {
+      running.value = false
+    }
   }
 
   if (!projects.value.length) {
@@ -161,6 +207,8 @@ export const useProjectStore = defineStore('project', () => {
     currentProjectId,
     currentProject,
     lastRunMessage,
+    running,
+    canvasEpoch,
     createProject,
     renameProject,
     deleteProject,

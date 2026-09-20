@@ -72,9 +72,10 @@ function update(field: keyof TextNodeData, value: string | number) {
         @change="update('model', ($event.target as HTMLSelectElement).value)"
         @mousedown.stop
       >
-        <option>W Image 2.5</option>
-        <option>Flux Pro</option>
-        <option>SDXL</option>
+        <option value="gpt-image-2">推理模型</option>
+        <option value="nano-banana-pro">美学模型</option>
+        <option value="gpt-image-2-we">gpt-image-2-we</option>
+        <option value="gpt-image-2.5-we">gpt-image-2.5-we</option>
       </select>
       <button class="chip" type="button" @mousedown.stop>{{ data.quality }}</button>
       <button class="chip" type="button" @mousedown.stop>{{ data.resolution }}</button>

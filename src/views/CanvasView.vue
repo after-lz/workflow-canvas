@@ -1,3 +1,37 @@
+<template>
+  <div class="canvas-page" v-if="store.currentProject">
+    <TopBar :project-name="store.currentProject.name" @rename="onRename" />
+
+    <main class="stage">
+      <LeftToolbar
+        :active-tool="activeTool"
+        @select-tool="activeTool = $event"
+        @add-node="onAddNode"
+      />
+
+      <WorkflowCanvas ref="canvasRef" :project-id="projectId" />
+
+      <BottomBar
+        :zoom="zoom"
+        :message="store.lastRunMessage"
+        @zoom-in="canvasRef?.zoomIn()"
+        @zoom-out="canvasRef?.zoomOut()"
+        @fit-view="canvasRef?.fitView()"
+        @run="onRun"
+        @save="onSave"
+      />
+    </main>
+
+    <LoginRequiredDialog
+      :open="prompt !== null"
+      :title="prompt ? promptTitle[prompt] : ''"
+      :message="prompt ? promptMessage[prompt] : ''"
+      @confirm="goLogin"
+      @cancel="prompt = null"
+    />
+  </div>
+</template>
+
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -95,6 +129,7 @@ async function onRun() {
     prompt.value = 'run'
     return
   }
+  canvasRef.value?.flush()
   await store.runWorkflow()
 }
 
@@ -107,40 +142,6 @@ function onSave() {
   store.saveCurrentProject()
 }
 </script>
-
-<template>
-  <div class="canvas-page" v-if="store.currentProject">
-    <TopBar :project-name="store.currentProject.name" @rename="onRename" />
-
-    <main class="stage">
-      <LeftToolbar
-        :active-tool="activeTool"
-        @select-tool="activeTool = $event"
-        @add-node="onAddNode"
-      />
-
-      <WorkflowCanvas ref="canvasRef" :project-id="projectId" />
-
-      <BottomBar
-        :zoom="zoom"
-        :message="store.lastRunMessage"
-        @zoom-in="canvasRef?.zoomIn()"
-        @zoom-out="canvasRef?.zoomOut()"
-        @fit-view="canvasRef?.fitView()"
-        @run="onRun"
-        @save="onSave"
-      />
-    </main>
-
-    <LoginRequiredDialog
-      :open="prompt !== null"
-      :title="prompt ? promptTitle[prompt] : ''"
-      :message="prompt ? promptMessage[prompt] : ''"
-      @confirm="goLogin"
-      @cancel="prompt = null"
-    />
-  </div>
-</template>
 
 <style scoped>
 .canvas-page {
